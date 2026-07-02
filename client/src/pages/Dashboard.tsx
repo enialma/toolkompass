@@ -114,7 +114,7 @@ function ToolCard({ tool, entry, isWinner }: {
   entry: import("../data/comparisons").ToolEntry;
   isWinner: boolean;
 }) {
-  const [showTipp, setShowTipp] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const color = TOOL_COLORS[tool.id];
 
   return (
@@ -167,58 +167,70 @@ function ToolCard({ tool, entry, isWinner }: {
           ))}
         </div>
 
-        {/* Stärken / Schwächen */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <div className="text-xs font-semibold mb-1.5 flex items-center gap-1">
-              <span style={{ color }}>✓</span> Stärken
-            </div>
-            <ul className="space-y-1">
-              {entry.staerken.map((s, i) => (
-                <li key={i} className="text-xs opacity-75 flex gap-1.5">
-                  <span className="opacity-40 shrink-0">·</span>
-                  <span>{s}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <div className="text-xs font-semibold mb-1.5 flex items-center gap-1">
-              <span className="opacity-50">✗</span> Schwächen
-            </div>
-            <ul className="space-y-1">
-              {entry.schwaechen.map((s, i) => (
-                <li key={i} className="text-xs opacity-75 flex gap-1.5">
-                  <span className="opacity-40 shrink-0">·</span>
-                  <span>{s}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/* Empfehlung — immer sichtbar, eine Zeile */}
+        <div className="flex gap-2 text-xs font-medium" style={{ color }}>
+          <span className="shrink-0">➜</span>
+          <span>{entry.empfehlung}</span>
         </div>
 
-        {/* Detail notes */}
-        <div className="space-y-2 border-t border-black/8 dark:border-white/8 pt-3">
-          <NoteRow label="⏱ Zeitersparnis" value={entry.zeitNote} />
-          <NoteRow label="🔎 Faktenprüfung" value={entry.faktenpruefungNote} />
-          <NoteRow label="🎯 Direkteinsatz" value={entry.direkteinsatzNote} />
-        </div>
-
-        {/* Tipp toggle */}
+        {/* Details-Umschalter */}
         <button
-          onClick={() => setShowTipp(!showTipp)}
+          onClick={() => setShowDetails(!showDetails)}
           className="w-full text-left text-xs font-semibold rounded-xl px-3 py-2 transition-colors"
           style={{ backgroundColor: `${color}15`, color }}
-          data-testid={`tipp-toggle-${tool.id}`}
+          aria-expanded={showDetails}
+          data-testid={`details-toggle-${tool.id}`}
         >
-          {showTipp ? "▲ Tipp ausblenden" : "▼ Praxis-Tipp für Lehrpersonen"}
+          {showDetails ? "▲ Details ausblenden" : "▼ Details anzeigen"}
         </button>
-        {showTipp && (
-          <div
-            className="text-xs rounded-xl px-3 py-3 leading-relaxed"
-            style={{ backgroundColor: `${color}10`, borderLeft: `3px solid ${color}` }}
-          >
-            {entry.tipp}
+
+        {showDetails && (
+          <div className="space-y-4">
+            {/* Stärken / Schwächen */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-xs font-semibold mb-1.5 flex items-center gap-1">
+                  <span style={{ color }}>✓</span> Stärken
+                </div>
+                <ul className="space-y-1">
+                  {entry.staerken.map((s, i) => (
+                    <li key={i} className="text-xs opacity-75 flex gap-1.5">
+                      <span className="opacity-40 shrink-0">·</span>
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="text-xs font-semibold mb-1.5 flex items-center gap-1">
+                  <span className="opacity-50">✗</span> Schwächen
+                </div>
+                <ul className="space-y-1">
+                  {entry.schwaechen.map((s, i) => (
+                    <li key={i} className="text-xs opacity-75 flex gap-1.5">
+                      <span className="opacity-40 shrink-0">·</span>
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Detail notes */}
+            <div className="space-y-2 border-t border-black/8 dark:border-white/8 pt-3">
+              <NoteRow label="⏱ Zeitersparnis" value={entry.zeitNote} />
+              <NoteRow label="🔎 Faktenprüfung" value={entry.faktenpruefungNote} />
+              <NoteRow label="🎯 Direkteinsatz" value={entry.direkteinsatzNote} />
+            </div>
+
+            {/* Praxis-Tipp */}
+            <div
+              className="text-xs rounded-xl px-3 py-3 leading-relaxed"
+              style={{ backgroundColor: `${color}10`, borderLeft: `3px solid ${color}` }}
+            >
+              <span className="font-semibold" style={{ color }}>💡 Praxis-Tipp: </span>
+              {entry.tipp}
+            </div>
           </div>
         )}
       </div>
@@ -517,7 +529,7 @@ export default function Dashboard() {
         ) : (
           <>
             {/* Category tabs — desktop */}
-            <div className="hidden sm:flex gap-2 overflow-x-auto pb-1 hide-scrollbar" role="tablist">
+            <div className="hidden sm:flex flex-wrap gap-2 pb-1" role="tablist">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
