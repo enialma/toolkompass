@@ -1,5 +1,5 @@
 export type Tool = "perplexity" | "chatgpt" | "claude" | "notebooklm";
-export type CategoryId = "recherche" | "unterrichtsentwurf" | "feedback" | "aufgaben" | "dokumente";
+export type CategoryId = "recherche" | "unterrichtsentwurf" | "aufgaben" | "dokumente";
 
 export interface WorkflowStep {
   tool: Tool;
@@ -303,107 +303,7 @@ export const CATEGORIES: CategoryData[] = [
     },
   },
 
-  // ── 3. Feedback ───────────────────────────────────────────────────────────
-  {
-    id: "feedback",
-    label: "Feedback für Schülertexte",
-    icon: "✍️",
-    scenario: "Ihre KV-Klasse (3. Lehrjahr, EFZ-Abschlussjahr) hat eine schriftliche Standortbestimmung (Reflexionsbericht) als Teil des E-Portfolios eingereicht — je 400–500 Wörter. Sie möchten allen 24 Lernenden konstruktives, individuelles Feedback zur Reflexionstiefe und Sprachqualität geben.",
-    orchestration: {
-      title: "Optimaler Workflow: Portfolio-Feedback",
-      description: "Nutzen Sie die Stärken aller Tools für ein effizientes, qualitativ hochwertiges Feedback-System für Ihre gesamte Klasse.",
-      steps: [
-        { tool: "perplexity",  role: "Schritt 1 · Kriterien recherchieren", action: "Aktuelle Portfolio-Standards und Reflexionskompetenz-Kriterien (PHZH, BiVo) suchen" },
-        { tool: "notebooklm", role: "Schritt 2 · Raster bereitstellen",      action: "Bewertungsraster als PDF hochladen → konsequente, transparente Kriterienanwendung sicherstellen" },
-        { tool: "claude",     role: "Schritt 3 · Tiefes Feedback",           action: "Anspruchsvolle Texte mit tiefem Reflexionsfeedback versehen — präzise und wertschätzend" },
-        { tool: "chatgpt",    role: "Schritt 4 · Skalieren",                 action: "Restliche Texte effizient und konsistent mit Sandwich-Feedback verarbeiten (20+ Texte)" },
-      ],
-      proTipp: "Teilen Sie die Klasse auf: Claude für Texte mit komplexer Reflexion — ChatGPT für die restlichen Texte mit klarer Struktur.",
-      zeitvorteil: "Feedback für 24 Lernende: ca. 45 Min. statt 6–8 Stunden individueller Korrekturarbeit.",
-    },
-    tools: {
-      perplexity: {
-        scores: { zeitersparnis: 2, faktenpruefung: 1, direkteinsatz: 2, qualitaet: 2, einfachheit: 3 },
-        staerken: [
-          "Kann Bewertungsraster und Feedback-Kriterien für Portfolios recherchieren",
-          "Hilfreich für Recherche zu Reflexionskompetenz-Standards",
-        ],
-        schwaechen: [
-          "Nicht für direktes Textfeedback konzipiert",
-          "Keine Verarbeitung von Schülertexten",
-          "Für E-Portfolio-Feedback deutlich unterlegen",
-          "Kurze, oberflächliche Rückmeldungen",
-        ],
-        empfehlung: "Nicht für direktes Feedback geeignet",
-        tipp: "Nutzen Sie Perplexity besser zur Recherche von Bewertungsrastern (z.B. Schweizer Portfolio-Standards, PHZH-Literatur zur Reflexionskompetenz) — das eigentliche Feedback dann mit Claude oder ChatGPT generieren.",
-        zeitNote: "Geringe Zeitersparnis für Textfeedback — sinnvoll nur für Vorbereitung von Bewertungsrastern.",
-        faktenpruefungNote: "Sehr gering — Feedback zu Schülertexten braucht keine Faktenprüfung.",
-        direkteinsatzNote: "Gering — für direktes Portfolio-Feedback nicht geeignet.",
-      },
-      chatgpt: {
-        scores: { zeitersparnis: 4, faktenpruefung: 2, direkteinsatz: 4, qualitaet: 4, einfachheit: 5 },
-        staerken: [
-          "Strukturiertes Feedback nach vorgegebenen Kriterien (Reflexionstiefe, Sprache)",
-          "Adaptiert Ton — wertschätzend, konstruktiv, motivierend",
-          "Kann Portfolio-Bewertungsraster direkt anwenden",
-          "Schnell und konsistent bei 20+ Texten",
-          "Deutsch B2-Niveau gut erkannt und kommentiert",
-        ],
-        schwaechen: [
-          "Kann oberflächlich bei tiefem Reflexionsfeedback wirken",
-          "Braucht klare Kriterien und Kontext im Prompt",
-          "Kennt E-Portfolio-Spezifika nur auf Anfrage",
-        ],
-        empfehlung: "Sehr gut für strukturiertes Massenfeedback",
-        tipp: "Prompt: 'Gib konstruktives Feedback zu diesem KV-Reflexionsbericht (3. Lehrjahr, E-Portfolio-Abgabe). Kriterien: Reflexionstiefe (Selbstwahrnehmung, Konsequenzen), Sprachqualität (B2 Schrift), Struktur. Max. 150 Wörter, ermutigender Ton.' — Sandwich-Feedback (Stärke–Entwicklung–Stärke) explizit verlangen.",
-        zeitNote: "Spart 50–60% Korrekturzeit — besonders wertvoll bei 20+ E-Portfolio-Abgaben vor Semesterende.",
-        faktenpruefungNote: "Gering — Sprachfeedback ist zuverlässig; inhaltliche Reflexionskompetenz-Einschätzung einmal stichprobenartig prüfen.",
-        direkteinsatzNote: "Hoch — Feedback mit kleinen persönlichen Ergänzungen direkt an Lernende weitergeben.",
-      },
-      claude: {
-        scores: { zeitersparnis: 4, faktenpruefung: 1, direkteinsatz: 5, qualitaet: 5, einfachheit: 4 },
-        staerken: [
-          "Aussergewöhnlich tiefes Feedback zur Reflexionsqualität",
-          "Erkennt oberflächliche vs. echte Reflexion präzise",
-          "Wertschätzend-professioneller Ton — passend für Berufsschule",
-          "Konkrete Verbesserungsvorschläge mit Beispielformulierungen",
-          "Versteht den E-Portfolio-Kontext gut",
-        ],
-        schwaechen: [
-          "Sehr ausführliche Rückmeldungen — Länge steuern nötig",
-          "Prompt-Setup braucht mehr Sorgfalt",
-          "Kann für schwächere Texte zu detailliert werden",
-        ],
-        empfehlung: "Beste Wahl für qualitativ hochwertiges Portfolio-Feedback",
-        tipp: "Prompt: 'Du bewertest Reflexionsberichte von KV-Lernenden (3. Lehrjahr, E-Portfolio). Feedback auf Deutsch, max. 130 Wörter, Fokus: Reflexionstiefe (zeigt Lernende echte Selbstreflexion oder beschreibt sie nur?), Sprachqualität B2, je ein konkreter Entwicklungshinweis. Ton: wertschätzend und klar.' Exzellente Ergebnisse.",
-        zeitNote: "Gleiche Zeitersparnis wie ChatGPT, aber weniger Nachbearbeitungsbedarf durch höhere Feedback-Qualität.",
-        faktenpruefungNote: "Sehr gering — Claude ist sehr präzise im Sprachfeedback und im Einschätzen von Reflexionskompetenz.",
-        direkteinsatzNote: "Sehr hoch — Feedback ist empathisch, fachlich präzise und direkt weiterzugeben.",
-      },
-      notebooklm: {
-        scores: { zeitersparnis: 3, faktenpruefung: 1, direkteinsatz: 3, qualitaet: 3, einfachheit: 3 },
-        staerken: [
-          "Kann Bewertungsraster als Dokument hochladen und konsequent anwenden",
-          "Feedback bleibt strikt bei den hochgeladenen Kriterien — kein Abdriften",
-          "Kann mehrere Texte als Dokumente verarbeiten und vergleichen",
-          "Transparent: zeigt an, woher die Bewertungskriterien stammen",
-        ],
-        schwaechen: [
-          "Kein Chat-Interface für direktes, interaktives Feedback",
-          "Workflow umständlicher als ChatGPT/Claude (Upload für jeden Text)",
-          "Kein tiefes Verständnis von Reflexionskompetenz ohne Vorlage",
-          "Tonfeinheiten (wertschätzend, motivierend) weniger ausgeprägt",
-        ],
-        empfehlung: "Sinnvoll wenn Bewertungsraster vorhanden ist",
-        tipp: "Laden Sie Ihr Bewertungsraster als PDF hoch und fügen Sie den Schülertext als weiteres Dokument ein. NotebookLM analysiert den Text strikt anhand der Kriterien — gut für transparente, rastergebundene Rückmeldungen.",
-        zeitNote: "Mittlere Zeitersparnis — Upload-Workflow dauert, danach aber schnelle rasterbasierte Auswertung.",
-        faktenpruefungNote: "Sehr gering — bleibt bei hochgeladenen Bewertungskriterien, keine freien Ergänzungen.",
-        direkteinsatzNote: "Mittel — gut strukturiert, aber Tonfeinheiten manuell ergänzen.",
-      },
-    },
-  },
-
-  // ── 4. Übungsaufgaben ─────────────────────────────────────────────────────
+  // ── 3. Übungsaufgaben ─────────────────────────────────────────────────────
   {
     id: "aufgaben",
     label: "Übungsaufgaben erstellen",
@@ -502,7 +402,7 @@ export const CATEGORIES: CategoryData[] = [
       },
     },
   },
-  // ── 5. Dokumente analysieren ──────────────────────────────────────────────
+  // ── 4. Dokumente analysieren ──────────────────────────────────────────────
   {
     id: "dokumente",
     label: "Dokumente analysieren",
