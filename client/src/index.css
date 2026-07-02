@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens ── */
+:root {
+  --color-perplexity: #20808D;
+  --color-chatgpt: #10a37f;
+  --color-claude: #c96442;
+
+  /* shadcn/ui tokens — light */
+  --background: 210 20% 98%;
+  --foreground: 220 15% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 15% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 15% 12%;
+  --primary: 185 63% 34%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 220 15% 25%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 10% 50%;
+  --accent: 185 63% 34%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 185 63% 34%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 222 20% 7%;
+  --foreground: 210 20% 95%;
+  --card: 222 18% 10%;
+  --card-foreground: 210 20% 95%;
+  --popover: 222 18% 10%;
+  --popover-foreground: 210 20% 95%;
+  --primary: 185 55% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 222 15% 15%;
+  --secondary-foreground: 210 15% 80%;
+  --muted: 222 15% 15%;
+  --muted-foreground: 210 12% 55%;
+  --accent: 185 55% 45%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 63% 41%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 222 15% 18%;
+  --input: 222 15% 18%;
+  --ring: 185 55% 45%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth transitions */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
