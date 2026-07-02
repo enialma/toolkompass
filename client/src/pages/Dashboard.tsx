@@ -378,18 +378,17 @@ function SummaryTable() {
 // ── Routing: der sichtbare Bereich steckt in der URL, damit Links teilbar sind ─
 type View = CategoryId | "orchestrierung";
 
-function parseLocation(loc: string): { view: View; summary: boolean } {
+function parseLocation(loc: string): View {
   const seg = loc.replace(/^\//, "");
-  if (seg === "uebersicht") return { view: "recherche", summary: true };
-  if (seg === "orchestrierung") return { view: "orchestrierung", summary: false };
+  if (seg === "orchestrierung") return "orchestrierung";
   const cat = CATEGORIES.find((c) => c.id === seg);
-  return { view: cat ? cat.id : "recherche", summary: false };
+  return cat ? cat.id : "recherche";
 }
 
 // ── Main dashboard ──────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [location, setLocation] = useLocation();
-  const { view: activeCategory, summary: showSummary } = parseLocation(location);
+  const activeCategory = parseLocation(location);
 
   const [darkMode, setDarkMode] = useState(() => {
     const stored = typeof localStorage !== "undefined" ? localStorage.getItem("tk-theme") : null;
@@ -429,18 +428,6 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setLocation(showSummary ? "/recherche" : "/uebersicht")}
-              aria-pressed={showSummary}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium ${
-                showSummary
-                  ? "bg-black/8 dark:bg-white/8 border-black/15 dark:border-white/15"
-                  : "border-black/15 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/5"
-              }`}
-              data-testid="toggle-summary"
-            >
-              {showSummary ? "Detailansicht" : "Übersichtstabelle"}
-            </button>
-            <button
               onClick={() => setDarkMode(!darkMode)}
               className="w-8 h-8 rounded-lg border border-black/15 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-center text-sm"
               aria-label={darkMode ? "Zu hellem Design wechseln" : "Zu dunklem Design wechseln"}
@@ -462,27 +449,16 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Summary or detail */}
-        {showSummary ? (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Empfehlungsübersicht auf einen Blick</h2>
-            <SummaryTable />
-            <p className="text-xs opacity-50 text-center">
-              Grün hinterlegt = Empfehlung für dieses Szenario. Für Details: Detailansicht wählen.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Category tabs — desktop */}
+        {/* Category tabs — desktop */}
             <div className="hidden sm:flex flex-wrap gap-2 pb-1" role="tablist">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
                   role="tab"
-                  aria-selected={activeCategory === cat.id && !showSummary}
+                  aria-selected={activeCategory === cat.id}
                   onClick={() => setLocation("/" + cat.id)}
                   className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                    activeCategory === cat.id && !showSummary
+                    activeCategory === cat.id
                       ? "bg-[#20808D] text-white border-[#20808D] shadow-md"
                       : "border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
                   }`}
@@ -494,10 +470,10 @@ export default function Dashboard() {
               ))}
               <button
                 role="tab"
-                aria-selected={activeCategory === "orchestrierung" && !showSummary}
+                aria-selected={activeCategory === "orchestrierung"}
                 onClick={() => setLocation("/orchestrierung")}
                 className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                  activeCategory === "orchestrierung" && !showSummary
+                  activeCategory === "orchestrierung"
                     ? "bg-[#20808D] text-white border-[#20808D] shadow-md"
                     : "border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
                 }`}
@@ -547,8 +523,6 @@ export default function Dashboard() {
                 </div>
               </>
             )}
-          </>
-        )}
 
         {/* Footer */}
         <footer className="text-center text-xs opacity-40 py-4 border-t border-black/8 dark:border-white/8">
