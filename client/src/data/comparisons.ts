@@ -59,10 +59,10 @@ export const TOOLS: ToolMeta[] = [
 
 export const SCORE_LABELS: Record<keyof ScoreSet, { label: string; inverted?: boolean }> = {
   zeitersparnis:  { label: "Zeitersparnis" },
-  faktenpruefung: { label: "Faktenprüfung nötig", inverted: true },
-  direkteinsatz:  { label: "Direkteinsatz" },
+  faktenpruefung: { label: "Zuverlässigkeit", inverted: true },
+  direkteinsatz:  { label: "Sofort verwendbar" },
   qualitaet:      { label: "Qualität" },
-  einfachheit:    { label: "Bedienung" },
+  einfachheit:    { label: "Einstieg" },
 };
 
 export const CATEGORIES: CategoryData[] = [
