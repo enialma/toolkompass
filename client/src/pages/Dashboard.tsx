@@ -4,10 +4,10 @@ import { CATEGORIES, TOOLS, SCORE_LABELS, type Tool, type CategoryId, type Score
 // Short labels for radar chart axes (to avoid clipping)
 const RADAR_LABELS: Record<keyof ScoreSet, string> = {
   zeitersparnis:  "Zeit",
-  faktenpruefung: "Zuverl.",
+  faktenpruefung: "Prüfg.",
   direkteinsatz:  "Einsatz",
   qualitaet:      "Qualität",
-  einfachheit:    "Einstieg",
+  einfachheit:    "Bedien.",
 };
 
 // ── Radar / Spider chart using pure SVG ────────────────────────────────────
@@ -51,7 +51,7 @@ function RadarChart({ scores, tool }: { scores: ScoreSet; tool: Tool }) {
     const a = angleOf(i);
     const lx = cx + (r + 28) * Math.cos(a);
     const ly = cy + (r + 28) * Math.sin(a);
-    const anchor: "end" | "start" | "middle" = lx < cx - 5 ? "end" : lx > cx + 5 ? "start" : "middle";
+    const anchor = lx < cx - 5 ? "end" : lx > cx + 5 ? "start" : "middle";
     return { x: lx, y: ly, anchor, label: RADAR_LABELS[k] };
   });
 
@@ -88,8 +88,8 @@ function RadarChart({ scores, tool }: { scores: ScoreSet; tool: Tool }) {
 
 // ── Score bar ───────────────────────────────────────────────────────────────
 function ScoreBar({ value, max = 5, color, inverted }: { value: number; max?: number; color: string; inverted?: boolean }) {
+  const pct = (value / max) * 100;
   const display = inverted ? max - value + 1 : value;
-  const pct = (display / max) * 100;
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
@@ -106,10 +106,10 @@ function ScoreBar({ value, max = 5, color, inverted }: { value: number; max?: nu
 // ── Tool card ───────────────────────────────────────────────────────────────
 function ToolCard({ tool, entry, isWinner }: {
   tool: typeof TOOLS[number];
-  entry: import("../data/comparisons").ToolEntry;
+  entry: ReturnType<typeof CATEGORIES[number]["tools"][Tool]> extends never ? never : (typeof CATEGORIES[number]["tools"][Tool]);
   isWinner: boolean;
 }) {
-  const [showTipp, setShowTipp] = useState(true);
+  const [showTipp, setShowTipp] = useState(false);
   const colorMap: Record<Tool, string> = {
     perplexity: "#20808D",
     chatgpt: "#10a37f",
@@ -373,18 +373,6 @@ function NoteRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── Helper: compute winners for a category from scores ──────────────────────
-function computeWinners(catId: CategoryId): Tool[] {
-  const cat = CATEGORIES.find((c) => c.id === catId)!;
-  const score = (t: Tool) => {
-    const s = cat.tools[t].scores;
-    return s.direkteinsatz + s.qualitaet + s.zeitersparnis + (5 - s.faktenpruefung);
-  };
-  const scored = TOOLS.map((t) => ({ id: t.id, val: score(t.id) }));
-  const best = Math.max(...scored.map((s) => s.val));
-  return scored.filter((s) => s.val === best).map((s) => s.id);
-}
-
 // ── Summary table ───────────────────────────────────────────────────────────
 function SummaryTable() {
   const colorMap: Record<Tool, string> = {
@@ -393,11 +381,13 @@ function SummaryTable() {
     claude: "#c96442",
     notebooklm: "#4285F4",
   };
-  const winners = Object.fromEntries(
-    (["recherche", "unterrichtsentwurf", "feedback", "aufgaben", "dokumente"] as CategoryId[]).map(
-      (id) => [id, computeWinners(id)]
-    )
-  ) as Record<CategoryId, Tool[]>;
+  const winners: Record<CategoryId, Tool[]> = {
+    recherche: ["perplexity"],
+    unterrichtsentwurf: ["chatgpt", "claude"],
+    feedback: ["claude"],
+    aufgaben: ["chatgpt", "claude"],
+    dokumente: ["notebooklm"],
+  };
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-black/10 dark:border-white/10">
@@ -497,6 +487,20 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
+                setShowSummary(false);
+                setActiveCategory("orchestrierung");
+              }}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium ${
+                activeCategory === "orchestrierung" && !showSummary
+                  ? "bg-[#20808D] text-white border-[#20808D]"
+                  : "border-black/15 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/5"
+              }`}
+              data-testid="toggle-orchestrierung"
+            >
+              ⚡ Orchestrieren
+            </button>
+            <button
+              onClick={() => {
                 setShowSummary(!showSummary);
                 if (!showSummary) setActiveCategory("recherche");
               }}
@@ -526,7 +530,7 @@ export default function Dashboard() {
         <div className="text-center space-y-2 py-2">
           <h1 className="text-2xl font-bold">Welches KI-Tool passt zu meiner Aufgabe?</h1>
           <p className="text-sm opacity-60 max-w-2xl mx-auto">
-            Finde in Sekunden das richtige Tool für deine Unterrichtsaufgabe — Perplexity, ChatGPT, Claude und NotebookLM im direkten Vergleich anhand realer Szenarien aus der Schweizer Berufsbildung.
+            Vergleich von Perplexity, ChatGPT, Claude und NotebookLM anhand realer Unterrichtsszenarien aus der Schweizer Berufsbildung.
           </p>
         </div>
 
@@ -541,16 +545,16 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            {/* Category tabs — desktop */}
-            <div className="hidden sm:flex gap-2 overflow-x-auto pb-1 hide-scrollbar" role="tablist">
+            {/* Category tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar" role="tablist">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
                   role="tab"
                   aria-selected={activeCategory === cat.id}
-                  onClick={() => { setShowSummary(false); setActiveCategory(cat.id); }}
+                  onClick={() => setActiveCategory(cat.id)}
                   className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                    activeCategory === cat.id && !showSummary
+                    activeCategory === cat.id
                       ? "bg-[#20808D] text-white border-[#20808D] shadow-md"
                       : "border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
                   }`}
@@ -560,45 +564,7 @@ export default function Dashboard() {
                   <span>{cat.label}</span>
                 </button>
               ))}
-              <button
-                role="tab"
-                aria-selected={activeCategory === "orchestrierung" && !showSummary}
-                onClick={() => { setShowSummary(false); setActiveCategory("orchestrierung"); }}
-                className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                  activeCategory === "orchestrierung" && !showSummary
-                    ? "bg-[#20808D] text-white border-[#20808D] shadow-md"
-                    : "border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
-                }`}
-                data-testid="tab-orchestrierung"
-              >
-                <span>⚡</span>
-                <span>Tools kombinieren</span>
-              </button>
-            </div>
 
-            {/* Category select — mobile */}
-            <div className="sm:hidden">
-              <select
-                value={showSummary ? "__summary__" : activeCategory}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "__summary__") {
-                    setShowSummary(true);
-                    setActiveCategory("recherche");
-                  } else {
-                    setShowSummary(false);
-                    setActiveCategory(val as CategoryId | "orchestrierung");
-                  }
-                }}
-                className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#20808D]"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.label}
-                  </option>
-                ))}
-                <option value="orchestrierung">⚡ Tools kombinieren</option>
-              </select>
             </div>
 
             {/* Orchestrierung view */}
@@ -661,7 +627,7 @@ export default function Dashboard() {
 
         {/* Footer */}
         <footer className="text-center text-xs opacity-40 py-4 border-t border-black/8 dark:border-white/8">
-          KI-Kompass für Lehrpersonen · Perplexity, ChatGPT, Claude & NotebookLM · Bewertungen basieren auf pädagogischen Praxiserfahrungen · Stand: 2026
+          KI-Kompass für Lehrpersonen · Bewertungen basieren auf pädagogischen Praxiserfahrungen · Stand: 2026
         </footer>
       </main>
     </div>
