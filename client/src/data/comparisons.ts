@@ -19,8 +19,15 @@ export interface ToolMeta {
   id: Tool;
   label: string;
   tagline: string;
-  colorVar: string;
 }
+
+/** Markenfarbe pro Tool — zentral, damit sie nicht mehrfach im Code dupliziert wird. */
+export const TOOL_COLORS: Record<Tool, string> = {
+  perplexity: "#20808D",
+  chatgpt: "#10a37f",
+  claude: "#c96442",
+  notebooklm: "#4285F4",
+};
 
 export interface ScoreSet {
   zeitersparnis: number;
@@ -51,10 +58,10 @@ export interface CategoryData {
 }
 
 export const TOOLS: ToolMeta[] = [
-  { id: "perplexity",  label: "Perplexity",  tagline: "KI-Suchmaschine mit Quellen",    colorVar: "--color-perplexity" },
-  { id: "chatgpt",     label: "ChatGPT",     tagline: "Vielseitiger KI-Assistent",        colorVar: "--color-chatgpt" },
-  { id: "claude",      label: "Claude",      tagline: "Präziser Analyse-Assistent",       colorVar: "--color-claude" },
-  { id: "notebooklm",  label: "NotebookLM",  tagline: "Google Dokument-Analyse & Audio",  colorVar: "--color-notebooklm" },
+  { id: "perplexity",  label: "Perplexity",  tagline: "KI-Suchmaschine mit Quellen" },
+  { id: "chatgpt",     label: "ChatGPT",     tagline: "Vielseitiger KI-Assistent" },
+  { id: "claude",      label: "Claude",      tagline: "Präziser Analyse-Assistent" },
+  { id: "notebooklm",  label: "NotebookLM",  tagline: "Google Dokument-Analyse & Audio" },
 ];
 
 export const SCORE_LABELS: Record<keyof ScoreSet, { label: string; inverted?: boolean }> = {
@@ -64,6 +71,28 @@ export const SCORE_LABELS: Record<keyof ScoreSet, { label: string; inverted?: bo
   qualitaet:      { label: "Qualität" },
   einfachheit:    { label: "Einstieg" },
 };
+
+/**
+ * Anzeigewert einer Bewertung. Für invertierte Achsen (z. B. faktenpruefung =
+ * "Prüfaufwand") wird gedreht, sodass ein hoher Wert immer "besser" bedeutet.
+ * Wird von Balken UND Radar genutzt, damit beide dasselbe zeigen.
+ */
+export function displayScore(key: keyof ScoreSet, value: number, max = 5): number {
+  return SCORE_LABELS[key].inverted ? max - value + 1 : value;
+}
+
+/** Gesamtnutzen eines Tools in einer Kategorie — Grundlage der "Empfohlen"-Markierung. */
+export function toolScore(entry: ToolEntry): number {
+  const s = entry.scores;
+  return s.direkteinsatz + s.qualitaet + s.zeitersparnis + (5 - s.faktenpruefung);
+}
+
+/** Tool-IDs mit dem höchsten Gesamtnutzen in einer Kategorie (kann mehrere geben). */
+export function winnersFor(cat: CategoryData): Tool[] {
+  const scored = TOOLS.map((t) => ({ id: t.id, val: toolScore(cat.tools[t.id]) }));
+  const best = Math.max(...scored.map((s) => s.val));
+  return scored.filter((s) => s.val === best).map((s) => s.id);
+}
 
 export const CATEGORIES: CategoryData[] = [
   // ── 1. Recherche ──────────────────────────────────────────────────────────
