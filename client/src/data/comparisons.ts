@@ -87,11 +87,17 @@ export function toolScore(entry: ToolEntry): number {
   return s.direkteinsatz + s.qualitaet + s.zeitersparnis + (5 - s.faktenpruefung);
 }
 
-/** Tool-IDs mit dem höchsten Gesamtnutzen in einer Kategorie (kann mehrere geben). */
+/**
+ * Empfohlene Tools einer Kategorie: der Sieger UND alle, die nur knapp
+ * dahinter liegen (max. RECOMMEND_MARGIN Punkte Rückstand). So werden auch
+ * fast gleichwertige Tools (z. B. ChatGPT knapp hinter Claude) markiert.
+ */
+export const RECOMMEND_MARGIN = 2;
+
 export function winnersFor(cat: CategoryData): Tool[] {
   const scored = TOOLS.map((t) => ({ id: t.id, val: toolScore(cat.tools[t.id]) }));
   const best = Math.max(...scored.map((s) => s.val));
-  return scored.filter((s) => s.val === best).map((s) => s.id);
+  return scored.filter((s) => s.val >= best - RECOMMEND_MARGIN).map((s) => s.id);
 }
 
 export const CATEGORIES: CategoryData[] = [
