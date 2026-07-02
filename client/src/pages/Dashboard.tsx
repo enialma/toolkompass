@@ -108,47 +108,30 @@ function ScoreBar({ value, max = 5, color, inverted }: { value: number; max?: nu
   );
 }
 
-// ── Tool card ───────────────────────────────────────────────────────────────
-function ToolCard({ tool, entry, isWinner }: {
+// ── Tool card — nur allgemeine Bewertung (Radar + Balken + Stärken/Schwächen) ─
+function ToolCard({ tool, entry }: {
   tool: typeof TOOLS[number];
   entry: import("../data/comparisons").ToolEntry;
-  isWinner: boolean;
 }) {
-  const [showDetails, setShowDetails] = useState(false);
   const color = TOOL_COLORS[tool.id];
 
   return (
     <div
-      className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-        isWinner
-          ? "border-2 shadow-lg scale-[1.01]"
-          : "border border-black/10 dark:border-white/10"
-      }`}
-      style={isWinner ? { borderColor: color } : {}}
+      className="rounded-2xl border border-black/10 dark:border-white/10 transition-all duration-200 overflow-hidden"
       data-testid={`tool-card-${tool.id}`}
     >
       {/* Header */}
-      <div className="px-5 py-4 flex items-center justify-between" style={{ backgroundColor: `${color}18` }}>
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-            style={{ backgroundColor: color }}
-          >
-            {tool.label[0]}
-          </div>
-          <div>
-            <div className="font-bold text-sm">{tool.label}</div>
-            <div className="text-xs opacity-60">{tool.tagline}</div>
-          </div>
+      <div className="px-5 py-4 flex items-center gap-3" style={{ backgroundColor: `${color}18` }}>
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
+          style={{ backgroundColor: color }}
+        >
+          {tool.label[0]}
         </div>
-        {isWinner && (
-          <span
-            className="text-xs font-semibold px-2 py-0.5 rounded-full text-white"
-            style={{ backgroundColor: color }}
-          >
-            Empfohlen
-          </span>
-        )}
+        <div>
+          <div className="font-bold text-sm">{tool.label}</div>
+          <div className="text-xs opacity-60">{tool.tagline}</div>
+        </div>
       </div>
 
       <div className="px-5 py-4 space-y-4 bg-white dark:bg-gray-900">
@@ -167,72 +150,35 @@ function ToolCard({ tool, entry, isWinner }: {
           ))}
         </div>
 
-        {/* Empfehlung — immer sichtbar, eine Zeile */}
-        <div className="flex gap-2 text-xs font-medium" style={{ color }}>
-          <span className="shrink-0">➜</span>
-          <span>{entry.empfehlung}</span>
-        </div>
-
-        {/* Details-Umschalter */}
-        <button
-          onClick={() => setShowDetails(!showDetails)}
-          className="w-full text-left text-xs font-semibold rounded-xl px-3 py-2 transition-colors"
-          style={{ backgroundColor: `${color}15`, color }}
-          aria-expanded={showDetails}
-          data-testid={`details-toggle-${tool.id}`}
-        >
-          {showDetails ? "▲ Details ausblenden" : "▼ Details anzeigen"}
-        </button>
-
-        {showDetails && (
-          <div className="space-y-4">
-            {/* Stärken / Schwächen */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <div className="text-xs font-semibold mb-1.5 flex items-center gap-1">
-                  <span style={{ color }}>✓</span> Stärken
-                </div>
-                <ul className="space-y-1">
-                  {entry.staerken.map((s, i) => (
-                    <li key={i} className="text-xs opacity-75 flex gap-1.5">
-                      <span className="opacity-40 shrink-0">·</span>
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <div className="text-xs font-semibold mb-1.5 flex items-center gap-1">
-                  <span className="opacity-50">✗</span> Schwächen
-                </div>
-                <ul className="space-y-1">
-                  {entry.schwaechen.map((s, i) => (
-                    <li key={i} className="text-xs opacity-75 flex gap-1.5">
-                      <span className="opacity-40 shrink-0">·</span>
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        {/* Stärken / Schwächen — untereinander, volle Breite */}
+        <div className="space-y-3 border-t border-black/8 dark:border-white/8 pt-3">
+          <div>
+            <div className="text-xs font-semibold mb-1.5 flex items-center gap-1">
+              <span style={{ color }}>✓</span> Stärken
             </div>
-
-            {/* Detail notes */}
-            <div className="space-y-2 border-t border-black/8 dark:border-white/8 pt-3">
-              <NoteRow label="⏱ Zeitersparnis" value={entry.zeitNote} />
-              <NoteRow label="🔎 Faktenprüfung" value={entry.faktenpruefungNote} />
-              <NoteRow label="🎯 Direkteinsatz" value={entry.direkteinsatzNote} />
-            </div>
-
-            {/* Praxis-Tipp */}
-            <div
-              className="text-xs rounded-xl px-3 py-3 leading-relaxed"
-              style={{ backgroundColor: `${color}10`, borderLeft: `3px solid ${color}` }}
-            >
-              <span className="font-semibold" style={{ color }}>💡 Praxis-Tipp: </span>
-              {entry.tipp}
-            </div>
+            <ul className="space-y-1">
+              {entry.staerken.map((s, i) => (
+                <li key={i} className="text-xs opacity-75 flex gap-1.5">
+                  <span className="opacity-40 shrink-0">·</span>
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
+          <div className="border-t border-black/8 dark:border-white/8 pt-3">
+            <div className="text-xs font-semibold mb-1.5 flex items-center gap-1">
+              <span className="opacity-50">✗</span> Schwächen
+            </div>
+            <ul className="space-y-1">
+              {entry.schwaechen.map((s, i) => (
+                <li key={i} className="text-xs opacity-75 flex gap-1.5">
+                  <span className="opacity-40 shrink-0">·</span>
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -458,7 +404,6 @@ export default function Dashboard() {
   }, [darkMode]);
 
   const currentCat = activeCategory !== "orchestrierung" ? CATEGORIES.find((c) => c.id === activeCategory)! : CATEGORIES[0];
-  const winners = activeCategory !== "orchestrierung" ? winnersFor(currentCat) : [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
@@ -597,41 +542,10 @@ export default function Dashboard() {
                       key={tool.id}
                       tool={tool}
                       entry={currentCat.tools[tool.id]}
-                      isWinner={winners.includes(tool.id)}
                     />
                   ))}
                 </div>
               </>
-            )}
-
-            {/* Quick decision helper — only on tool tabs */}
-            {activeCategory !== "orchestrierung" && (
-              <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-gray-900 p-5">
-                <h3 className="font-semibold text-sm mb-3">🧭 Schnellentscheidung: Welches Tool wähle ich?</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                  {TOOLS.map((t) => {
-                    const c = TOOL_COLORS[t.id];
-                    const entry = currentCat.tools[t.id];
-                    const s = entry.scores;
-                    const isTop = winners.includes(t.id);
-                    return (
-                      <div
-                        key={t.id}
-                        className="rounded-xl p-3 text-sm"
-                        style={{ backgroundColor: `${c}10`, borderLeft: `3px solid ${isTop ? c : "transparent"}` }}
-                      >
-                        <div className="font-semibold mb-1" style={{ color: c }}>{t.label}</div>
-                        <div className="text-xs opacity-75">{entry.empfehlung}</div>
-                        <div className="mt-2 flex gap-3 text-xs opacity-60">
-                          <span>⏱ {s.zeitersparnis}/5</span>
-                          <span>🎯 {s.direkteinsatz}/5</span>
-                          <span>⭐ {s.qualitaet}/5</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
             )}
           </>
         )}
