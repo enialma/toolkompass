@@ -1,5 +1,16 @@
-import { useState } from "react";
-import { CATEGORIES, TOOLS, SCORE_LABELS, type Tool, type CategoryId, type ScoreSet, type OrchestrationData } from "../data/comparisons";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import {
+  CATEGORIES,
+  TOOLS,
+  SCORE_LABELS,
+  TOOL_COLORS,
+  displayScore,
+  winnersFor,
+  type Tool,
+  type CategoryId,
+  type ScoreSet,
+} from "../data/comparisons";
 
 // Short labels for radar chart axes (to avoid clipping)
 const RADAR_LABELS: Record<keyof ScoreSet, string> = {
@@ -15,13 +26,7 @@ function RadarChart({ scores, tool }: { scores: ScoreSet; tool: Tool }) {
   const keys = Object.keys(SCORE_LABELS) as (keyof ScoreSet)[];
   const n = keys.length;
   const cx = 120, cy = 120, r = 72;
-  const colorMap: Record<Tool, string> = {
-    perplexity: "#20808D",
-    chatgpt: "#10a37f",
-    claude: "#c96442",
-    notebooklm: "#4285F4",
-  };
-  const color = colorMap[tool];
+  const color = TOOL_COLORS[tool];
 
   const angleOf = (i: number) => (Math.PI * 2 * i) / n - Math.PI / 2;
   const pt = (i: number, val: number) => {
@@ -42,8 +47,8 @@ function RadarChart({ scores, tool }: { scores: ScoreSet; tool: Tool }) {
     return `M${cx},${cy}L${x},${y}`;
   });
 
-  // data polygon
-  const dataPts = keys.map((k, i) => pt(i, scores[k]));
+  // data polygon — same display value as the score bars (inverted axes flipped)
+  const dataPts = keys.map((k, i) => pt(i, displayScore(k, scores[k])));
   const dataPath = dataPts.map(([x, y], j) => (j === 0 ? `M${x},${y}` : `L${x},${y}`)).join(" ") + "Z";
 
   // labels
@@ -109,14 +114,8 @@ function ToolCard({ tool, entry, isWinner }: {
   entry: import("../data/comparisons").ToolEntry;
   isWinner: boolean;
 }) {
-  const [showTipp, setShowTipp] = useState(true);
-  const colorMap: Record<Tool, string> = {
-    perplexity: "#20808D",
-    chatgpt: "#10a37f",
-    claude: "#c96442",
-    notebooklm: "#4285F4",
-  };
-  const color = colorMap[tool.id];
+  const [showTipp, setShowTipp] = useState(false);
+  const color = TOOL_COLORS[tool.id];
 
   return (
     <div
@@ -231,12 +230,7 @@ function ToolCard({ tool, entry, isWinner }: {
 
 // ── Orchestration view (shown when Orchestrierung tab is active) ─────────────
 function OrchestrationView() {
-  const toolColors: Record<Tool, string> = {
-    perplexity: "#20808D",
-    chatgpt: "#10a37f",
-    claude: "#c96442",
-    notebooklm: "#4285F4",
-  };
+  const toolColors = TOOL_COLORS;
   const toolIcons: Record<Tool, string> = {
     perplexity: "P",
     chatgpt: "C",
@@ -373,32 +367,8 @@ function NoteRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── Helper: compute winners for a category from scores ──────────────────────
-function computeWinners(catId: CategoryId): Tool[] {
-  const cat = CATEGORIES.find((c) => c.id === catId)!;
-  const score = (t: Tool) => {
-    const s = cat.tools[t].scores;
-    return s.direkteinsatz + s.qualitaet + s.zeitersparnis + (5 - s.faktenpruefung);
-  };
-  const scored = TOOLS.map((t) => ({ id: t.id, val: score(t.id) }));
-  const best = Math.max(...scored.map((s) => s.val));
-  return scored.filter((s) => s.val === best).map((s) => s.id);
-}
-
 // ── Summary table ───────────────────────────────────────────────────────────
 function SummaryTable() {
-  const colorMap: Record<Tool, string> = {
-    perplexity: "#20808D",
-    chatgpt: "#10a37f",
-    claude: "#c96442",
-    notebooklm: "#4285F4",
-  };
-  const winners = Object.fromEntries(
-    (["recherche", "unterrichtsentwurf", "feedback", "aufgaben", "dokumente"] as CategoryId[]).map(
-      (id) => [id, computeWinners(id)]
-    )
-  ) as Record<CategoryId, Tool[]>;
-
   return (
     <div className="overflow-x-auto rounded-2xl border border-black/10 dark:border-white/10">
       <table className="w-full text-sm">
@@ -406,20 +376,22 @@ function SummaryTable() {
           <tr className="border-b border-black/10 dark:border-white/10 bg-black/3 dark:bg-white/3">
             <th className="text-left px-4 py-3 font-semibold opacity-70">Aufgabe</th>
             {TOOLS.map((t) => (
-              <th key={t.id} className="px-4 py-3 font-semibold text-center" style={{ color: colorMap[t.id] }}>
+              <th key={t.id} className="px-4 py-3 font-semibold text-center" style={{ color: TOOL_COLORS[t.id] }}>
                 {t.label}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {CATEGORIES.map((cat, ci) => (
+          {CATEGORIES.map((cat, ci) => {
+            const winners = winnersFor(cat);
+            return (
             <tr key={cat.id} className={ci % 2 === 0 ? "bg-black/2 dark:bg-white/2" : ""}>
               <td className="px-4 py-3 font-medium">
                 {cat.icon} {cat.label}
               </td>
               {TOOLS.map((t) => {
-                const w = winners[cat.id].includes(t.id);
+                const w = winners.includes(t.id);
                 const entry = cat.tools[t.id];
                 return (
                   <td key={t.id} className="px-4 py-3 text-center">
@@ -428,7 +400,7 @@ function SummaryTable() {
                         className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           w ? "text-white" : "opacity-60 bg-black/8 dark:bg-white/8"
                         }`}
-                        style={w ? { backgroundColor: colorMap[t.id] } : {}}
+                        style={w ? { backgroundColor: TOOL_COLORS[t.id] } : {}}
                       >
                         {entry.empfehlung}
                       </span>
@@ -437,40 +409,44 @@ function SummaryTable() {
                 );
               })}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 }
 
+// ── Routing: der sichtbare Bereich steckt in der URL, damit Links teilbar sind ─
+type View = CategoryId | "orchestrierung";
+
+function parseLocation(loc: string): { view: View; summary: boolean } {
+  const seg = loc.replace(/^\//, "");
+  if (seg === "uebersicht") return { view: "recherche", summary: true };
+  if (seg === "orchestrierung") return { view: "orchestrierung", summary: false };
+  const cat = CATEGORIES.find((c) => c.id === seg);
+  return { view: cat ? cat.id : "recherche", summary: false };
+}
+
 // ── Main dashboard ──────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const [activeCategory, setActiveCategory] = useState<CategoryId | "orchestrierung">("recherche");
-  const [darkMode, setDarkMode] = useState(() =>
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  );
-  const [showSummary, setShowSummary] = useState(false);
+  const [location, setLocation] = useLocation();
+  const { view: activeCategory, summary: showSummary } = parseLocation(location);
 
-  // Apply dark mode to document
-  if (typeof document !== "undefined") {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = typeof localStorage !== "undefined" ? localStorage.getItem("tk-theme") : null;
+    if (stored) return stored === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  // Dark mode auf <html> anwenden und Wahl merken
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    localStorage.setItem("tk-theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
   const currentCat = activeCategory !== "orchestrierung" ? CATEGORIES.find((c) => c.id === activeCategory)! : CATEGORIES[0];
-
-  // Determine winner(s) per category by highest direkteinsatz + qualitaet + zeitersparnis - faktenpruefung
-  const toolScore = (t: Tool) => {
-    const s = currentCat.tools[t].scores;
-    return s.direkteinsatz + s.qualitaet + s.zeitersparnis + (5 - s.faktenpruefung);
-  };
-  const scores = activeCategory !== "orchestrierung" ? TOOLS.map((t) => ({ id: t.id, score: toolScore(t.id) })) : [];
-  const maxScore = scores.length > 0 ? Math.max(...scores.map((s) => s.score)) : 0;
-  const winners = scores.filter((s) => s.score === maxScore).map((s) => s.id);
+  const winners = activeCategory !== "orchestrierung" ? winnersFor(currentCat) : [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
@@ -496,10 +472,8 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                setShowSummary(!showSummary);
-                if (!showSummary) setActiveCategory("recherche");
-              }}
+              onClick={() => setLocation(showSummary ? "/recherche" : "/uebersicht")}
+              aria-pressed={showSummary}
               className={`text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium ${
                 showSummary
                   ? "bg-black/8 dark:bg-white/8 border-black/15 dark:border-white/15"
@@ -512,7 +486,8 @@ export default function Dashboard() {
             <button
               onClick={() => setDarkMode(!darkMode)}
               className="w-8 h-8 rounded-lg border border-black/15 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-center text-sm"
-              aria-label="Dark mode toggle"
+              aria-label={darkMode ? "Zu hellem Design wechseln" : "Zu dunklem Design wechseln"}
+              title={darkMode ? "Helles Design" : "Dunkles Design"}
               data-testid="dark-mode-toggle"
             >
               {darkMode ? "☀️" : "🌙"}
@@ -547,8 +522,8 @@ export default function Dashboard() {
                 <button
                   key={cat.id}
                   role="tab"
-                  aria-selected={activeCategory === cat.id}
-                  onClick={() => { setShowSummary(false); setActiveCategory(cat.id); }}
+                  aria-selected={activeCategory === cat.id && !showSummary}
+                  onClick={() => setLocation("/" + cat.id)}
                   className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
                     activeCategory === cat.id && !showSummary
                       ? "bg-[#20808D] text-white border-[#20808D] shadow-md"
@@ -563,7 +538,7 @@ export default function Dashboard() {
               <button
                 role="tab"
                 aria-selected={activeCategory === "orchestrierung" && !showSummary}
-                onClick={() => { setShowSummary(false); setActiveCategory("orchestrierung"); }}
+                onClick={() => setLocation("/orchestrierung")}
                 className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
                   activeCategory === "orchestrierung" && !showSummary
                     ? "bg-[#20808D] text-white border-[#20808D] shadow-md"
@@ -579,17 +554,8 @@ export default function Dashboard() {
             {/* Category select — mobile */}
             <div className="sm:hidden">
               <select
-                value={showSummary ? "__summary__" : activeCategory}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "__summary__") {
-                    setShowSummary(true);
-                    setActiveCategory("recherche");
-                  } else {
-                    setShowSummary(false);
-                    setActiveCategory(val as CategoryId | "orchestrierung");
-                  }
-                }}
+                value={activeCategory}
+                onChange={(e) => setLocation("/" + e.target.value)}
                 className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#20808D]"
               >
                 {CATEGORIES.map((cat) => (
@@ -632,8 +598,7 @@ export default function Dashboard() {
                 <h3 className="font-semibold text-sm mb-3">🧭 Schnellentscheidung: Welches Tool wähle ich?</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                   {TOOLS.map((t) => {
-                    const colorMap: Record<Tool, string> = { perplexity: "#20808D", chatgpt: "#10a37f", claude: "#c96442", notebooklm: "#4285F4" };
-                    const c = colorMap[t.id];
+                    const c = TOOL_COLORS[t.id];
                     const entry = currentCat.tools[t.id];
                     const s = entry.scores;
                     const isTop = winners.includes(t.id);
