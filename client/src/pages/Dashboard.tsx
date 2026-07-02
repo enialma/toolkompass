@@ -262,9 +262,6 @@ function OrchestrationView() {
             </div>
 
             <div className="px-5 py-4 space-y-4">
-              {/* Description */}
-              <p className="text-sm opacity-65 leading-relaxed">{cat.orchestration.description}</p>
-
               {/* Steps */}
               <div className="space-y-3">
                 {cat.orchestration.steps.map((step, i) => {
@@ -297,15 +294,6 @@ function OrchestrationView() {
                 style={{ backgroundColor: "#20808D10", borderLeft: "3px solid #20808D" }}
               >
                 ⏱ {cat.orchestration.zeitvorteil}
-              </div>
-
-              {/* Pro-Tipp */}
-              <div
-                className="text-sm rounded-xl px-3 py-2 leading-relaxed"
-                style={{ backgroundColor: "#4285F410", borderLeft: "3px solid #4285F4" }}
-              >
-                <span className="font-semibold" style={{ color: "#4285F4" }}>💡 Tipp: </span>
-                {cat.orchestration.proTipp}
               </div>
             </div>
           </div>
