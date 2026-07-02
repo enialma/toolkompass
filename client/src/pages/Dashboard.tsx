@@ -338,32 +338,48 @@ function ComparisonTable() {
             </tr>
           </thead>
           <tbody>
-            {CATEGORIES.map((cat, ci) => (
-              <tr key={cat.id} className={ci % 2 === 0 ? "bg-black/2 dark:bg-white/2" : ""}>
-                <td className="px-4 py-3 font-medium whitespace-nowrap">
-                  {cat.icon} {cat.label}
-                </td>
-                {TOOLS.map((t) => {
-                  const v = avgScore(cat.tools[t.id]);
-                  const c = TOOL_COLORS[t.id];
-                  return (
-                    <td key={t.id} className="px-3 py-3">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-xs font-semibold" style={{ color: c }}>{v.toFixed(1)}</span>
-                        <div className="w-14 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${(v / 5) * 100}%`, backgroundColor: c }} />
+            {CATEGORIES.map((cat, ci) => {
+              const values = TOOLS.map((t) => avgScore(cat.tools[t.id]));
+              const max = Math.max(...values);
+              return (
+                <tr key={cat.id} className={ci % 2 === 0 ? "bg-black/2 dark:bg-white/2" : ""}>
+                  <td className="px-4 py-3 font-medium whitespace-nowrap">
+                    {cat.icon} {cat.label}
+                  </td>
+                  {TOOLS.map((t, ti) => {
+                    const v = values[ti];
+                    const isBest = v >= max - 0.001;
+                    const c = TOOL_COLORS[t.id];
+                    return (
+                      <td key={t.id} className="px-3 py-2">
+                        <div
+                          className="flex flex-col items-center gap-1 rounded-lg py-1.5"
+                          style={isBest ? { backgroundColor: `${c}1f` } : {}}
+                        >
+                          <span
+                            className={`text-xs ${isBest ? "font-bold" : "font-medium opacity-55"}`}
+                            style={{ color: c }}
+                          >
+                            {isBest && "★ "}{v.toFixed(1)}
+                          </span>
+                          <div className="w-14 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${(v / 5) * 100}%`, backgroundColor: c, opacity: isBest ? 1 : 0.55 }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
       <p className="text-xs opacity-50 text-center">
-        Zahl = Gesamtbewertung (Durchschnitt der fünf Kriterien, 1–5, höher = besser) — neutraler Vergleich ohne Empfehlung.
+        Zahl = Gesamtbewertung (Durchschnitt der fünf Kriterien, 1–5, höher = besser). ★ = bester Wert je Aufgabe.
       </p>
     </div>
   );
