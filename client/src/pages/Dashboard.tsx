@@ -6,7 +6,6 @@ import {
   SCORE_LABELS,
   TOOL_COLORS,
   displayScore,
-  winnersFor,
   type Tool,
   type CategoryId,
   type ScoreSet,
@@ -316,74 +315,88 @@ function OrchestrationView() {
   );
 }
 
-function NoteRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-2 text-xs">
-      <span className="shrink-0 font-medium opacity-60 w-28">{label}</span>
-      <span className="opacity-75">{value}</span>
-    </div>
-  );
+// ── Vergleichstabelle — neutral: Durchschnittsbewertung je Tool & Szenario ────
+function avgScore(entry: import("../data/comparisons").ToolEntry): number {
+  const keys = Object.keys(SCORE_LABELS) as (keyof ScoreSet)[];
+  const sum = keys.reduce((a, k) => a + displayScore(k, entry.scores[k]), 0);
+  return sum / keys.length;
 }
 
-// ── Summary table ───────────────────────────────────────────────────────────
-function SummaryTable() {
+function ComparisonTable() {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-black/10 dark:border-white/10">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-black/10 dark:border-white/10 bg-black/3 dark:bg-white/3">
-            <th className="text-left px-4 py-3 font-semibold opacity-70">Aufgabe</th>
-            {TOOLS.map((t) => (
-              <th key={t.id} className="px-4 py-3 font-semibold text-center" style={{ color: TOOL_COLORS[t.id] }}>
-                {t.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {CATEGORIES.map((cat, ci) => {
-            const winners = winnersFor(cat);
-            return (
-            <tr key={cat.id} className={ci % 2 === 0 ? "bg-black/2 dark:bg-white/2" : ""}>
-              <td className="px-4 py-3 font-medium">
-                {cat.icon} {cat.label}
-              </td>
-              {TOOLS.map((t) => {
-                const w = winners.includes(t.id);
-                const entry = cat.tools[t.id];
-                return (
-                  <td key={t.id} className="px-4 py-3 text-center">
-                    <div className="flex flex-col items-center gap-1">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          w ? "text-white" : "opacity-60 bg-black/8 dark:bg-white/8"
-                        }`}
-                        style={w ? { backgroundColor: TOOL_COLORS[t.id] } : {}}
-                      >
-                        {entry.empfehlung}
-                      </span>
-                    </div>
-                  </td>
-                );
-              })}
+    <div className="space-y-3">
+      <div className="overflow-x-auto rounded-2xl border border-black/10 dark:border-white/10">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-black/10 dark:border-white/10 bg-black/3 dark:bg-white/3">
+              <th className="text-left px-4 py-3 font-semibold opacity-70">Aufgabe</th>
+              {TOOLS.map((t) => (
+                <th key={t.id} className="px-3 py-3 font-semibold text-center" style={{ color: TOOL_COLORS[t.id] }}>
+                  {t.label}
+                </th>
+              ))}
             </tr>
-            );
-          })}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {CATEGORIES.map((cat, ci) => {
+              const values = TOOLS.map((t) => avgScore(cat.tools[t.id]));
+              const max = Math.max(...values);
+              return (
+                <tr key={cat.id} className={ci % 2 === 0 ? "bg-black/2 dark:bg-white/2" : ""}>
+                  <td className="px-4 py-3 font-medium whitespace-nowrap">
+                    {cat.icon} {cat.label}
+                  </td>
+                  {TOOLS.map((t, ti) => {
+                    const v = values[ti];
+                    const isBest = v >= max - 0.001;
+                    const c = TOOL_COLORS[t.id];
+                    return (
+                      <td key={t.id} className="px-3 py-2">
+                        <div
+                          className="flex flex-col items-center gap-1 rounded-lg py-1.5"
+                          style={isBest ? { backgroundColor: `${c}1f` } : {}}
+                        >
+                          <span
+                            className={`text-xs ${isBest ? "font-bold" : "font-medium opacity-55"}`}
+                            style={{ color: c }}
+                          >
+                            {isBest && "★ "}{v.toFixed(1)}
+                          </span>
+                          <div className="w-14 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${(v / 5) * 100}%`, backgroundColor: c, opacity: isBest ? 1 : 0.55 }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs opacity-50 text-center">
+        Zahl = Gesamtbewertung (Durchschnitt der fünf Kriterien, 1–5, höher = besser). ★ = bester Wert je Aufgabe.
+      </p>
     </div>
   );
 }
 
 // ── Routing: der sichtbare Bereich steckt in der URL, damit Links teilbar sind ─
-type View = CategoryId | "orchestrierung";
+type View = CategoryId | "orchestrierung" | "vergleich";
 
 function parseLocation(loc: string): View {
   const seg = loc.replace(/^\//, "");
   if (seg === "orchestrierung") return "orchestrierung";
+  if (seg === "vergleich") return "vergleich";
   const cat = CATEGORIES.find((c) => c.id === seg);
   return cat ? cat.id : "recherche";
 }
+
+const CATEGORY_VIEWS: View[] = ["orchestrierung", "vergleich"];
 
 // ── Main dashboard ──────────────────────────────────────────────────────────
 export default function Dashboard() {
@@ -402,7 +415,7 @@ export default function Dashboard() {
     localStorage.setItem("tk-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
-  const currentCat = activeCategory !== "orchestrierung" ? CATEGORIES.find((c) => c.id === activeCategory)! : CATEGORIES[0];
+  const currentCat = CATEGORY_VIEWS.includes(activeCategory) ? CATEGORIES[0] : CATEGORIES.find((c) => c.id === activeCategory)!;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
@@ -482,6 +495,20 @@ export default function Dashboard() {
                 <span>⚡</span>
                 <span>Tools kombinieren</span>
               </button>
+              <button
+                role="tab"
+                aria-selected={activeCategory === "vergleich"}
+                onClick={() => setLocation("/vergleich")}
+                className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
+                  activeCategory === "vergleich"
+                    ? "bg-[#20808D] text-white border-[#20808D] shadow-md"
+                    : "border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
+                }`}
+                data-testid="tab-vergleich"
+              >
+                <span>📊</span>
+                <span>Vergleich</span>
+              </button>
             </div>
 
             {/* Category select — mobile */}
@@ -497,12 +524,15 @@ export default function Dashboard() {
                   </option>
                 ))}
                 <option value="orchestrierung">⚡ Tools kombinieren</option>
+                <option value="vergleich">📊 Vergleich</option>
               </select>
             </div>
 
-            {/* Orchestrierung view */}
+            {/* Ansicht je Reiter */}
             {activeCategory === "orchestrierung" ? (
               <OrchestrationView />
+            ) : activeCategory === "vergleich" ? (
+              <ComparisonTable />
             ) : (
               <>
                 {/* Scenario box */}
